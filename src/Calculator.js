@@ -1,106 +1,92 @@
-import React from "react";
+import { useState } from "react";
 import CalculatorButton from "./CalculatorButton";
 import CalculatorScreen from "./CalculatorScreen";
 
-class Calculator extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: "0",
-      tmp: "0",
-      operator: null,
-      error: "",
-      isCompleted: false,
-    };
-  }
+function Calculator() {
+  const [value, setValue] = useState("0");
+  const [tmp, setTmp] = useState("0");
+  const [operator, setOperator] = useState(null);
+  const [error, setError] = useState("");
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  handleNumberClick(number) {
-    if (this.state.error) this.clearAll();
+  function handleNumberClick(number) {
+    if (error) clearAll();
 
-    let value = this.state.value;
+    let newValue = value;
 
-    if (this.state.isCompleted && number === ".") {
-      value = "0.";
+    if (isCompleted && number === ".") {
+      newValue = "0.";
     } else if (
       (value === "0" && number !== ".") ||
-      (this.state.isCompleted && number !== ".")
+      (isCompleted && number !== ".")
     ) {
-      value = number;
+      newValue = number;
     } else if (value.length >= 20) {
       return;
     } else {
-      value = formatNumber(value + number);
+      newValue = formatNumber(value + number);
     }
 
-    this.setState({
-      isCompleted: false,
-      value: value,
-    });
+    setValue(newValue);
+    setIsCompleted(false);
   }
 
-  handleOperator(operator) {
-    if (this.state.error) return;
+  function handleOperator(inputOperator) {
+    if (error) return;
 
-    if (this.state.operator && !this.state.isCompleted) {
-      this.handleEqual();
-
-      return this.setState({
-        operator: operator,
-      });
+    if (operator && !isCompleted) {
+      handleEqual();
+      setOperator(inputOperator);
+      return;
     }
 
-    this.setState({
-      tmp: this.state.value,
-      operator: operator,
-      isCompleted: true,
-    });
+    setTmp(value);
+    setOperator(inputOperator);
+    setIsCompleted(true);
   }
 
-  handleNegative() {
-    let value = this.state.value;
-
+  function handleNegative() {
     if (value === 0) return;
 
-    value = -convertToNumber(value);
+    let newValue = -convertToNumber(value);
 
-    this.setState({
-      value: formatNumber(value),
-    });
+    setValue(formatNumber(newValue));
   }
 
-  handleEqual() {
+  function handleEqual() {
     let result = 0;
-    let error = "";
+    let newError = "";
 
-    if (this.state.error) return this.clearAll();
-    if (!this.state.operator) {
-      result = formatNumber(convertToNumber(this.state.value || 0));
-      return this.setState({
-        value: result,
-        tmp: result,
-        operator: null,
-        isCompleted: true,
-        error: error,
-      });
+    if (error) return clearAll();
+
+    if (!operator) {
+      result = formatNumber(convertToNumber(value || 0));
+
+      setValue(result);
+      setTmp(result);
+      setOperator(null);
+      setIsCompleted(true);
+      setError(newError);
+
+      return;
     }
 
-    const operator = this.state.operator;
-    const tmp = convertToNumber(this.state.tmp);
-    const value = convertToNumber(this.state.value);
+    const newTmp = convertToNumber(tmp);
+    const newValue = convertToNumber(value);
 
     switch (operator) {
       case "/":
-        if (value === 0) error = "Cannot devide by zero";
-        else result = tmp / value;
+        if (newValue === 0) newError = "Cannot devide by zero";
+        else result = newTmp / newValue;
         break;
       case "x":
-        result = tmp * value;
+        result = newTmp * newValue;
         break;
       case "-":
-        result = tmp - value;
+        result = newTmp - newValue;
         break;
       case "+":
-        result = tmp + value;
+        result = newTmp + newValue;
         break;
       default:
         result = 0;
@@ -109,149 +95,134 @@ class Calculator extends React.Component {
 
     result = formatNumber(result);
 
-    this.setState({
-      value: result,
-      tmp: result,
-      operator: null,
-      isCompleted: true,
-      error: error,
-    });
+    setValue(result);
+    setTmp(result);
+    setOperator(null);
+    setIsCompleted(true);
+    setError(newError);
   }
 
-  handleBackClick() {
-    if (this.state.error) return this.clearAll();
+  function handleBackClick() {
+    if (error) return clearAll();
 
-    let value = formatNumber(this.state.value.toString().slice(0, -1));
-
-    this.setState({
-      value: value,
-    });
+    let newValue = formatNumber(value.toString().slice(0, -1));
+    setValue(newValue);
   }
 
-  clearEntry() {
-    if (this.state.error) return this.clearAll();
-
-    this.setState({
-      value: "0",
-    });
+  function clearEntry() {
+    if (error) return clearAll();
+    setValue("0");
   }
 
-  clearAll() {
-    this.setState({
-      value: "0",
-      tmp: 0,
-      operator: null,
-      error: "",
-      isCompleted: false,
-    });
+  function clearAll() {
+    setValue("0");
+    setTmp("0");
+    setOperator(null);
+    setIsCompleted(false);
+    setError("");
   }
 
-  render() {
-    const value = this.state.error ? this.state.error : this.state.value;
+  const realValue = error || value;
 
-    return (
-      <div className="calculator">
-        <div className="calculator-header">
-          Simple calculator by HaPK using ReactJS
-        </div>
-        <div className="calculator-operator">{this.state.operator}</div>
-        <CalculatorScreen value={value} />
-        <div className="calculator-board">
-          <CalculatorButton text="CE" onClick={() => this.clearEntry()} />
-          <CalculatorButton text="C" onClick={() => this.clearAll()} />
-          <CalculatorButton
-            text="Back"
-            onClick={() => this.handleBackClick()}
-          />
-          <CalculatorButton
-            className={this.state.error ? "is-disabled" : ""}
-            onClick={() => this.handleOperator("/")}
-            text="/"
-          />
-          <CalculatorButton
-            className="is-number"
-            text="7"
-            onClick={() => this.handleNumberClick("7")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="8"
-            onClick={() => this.handleNumberClick("8")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="9"
-            onClick={() => this.handleNumberClick("9")}
-          />
-          <CalculatorButton
-            className={this.state.error ? "is-disabled" : ""}
-            onClick={() => this.handleOperator("x")}
-            text="x"
-          />
-          <CalculatorButton
-            className="is-number"
-            text="4"
-            onClick={() => this.handleNumberClick("4")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="5"
-            onClick={() => this.handleNumberClick("5")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="6"
-            onClick={() => this.handleNumberClick("6")}
-          />
-          <CalculatorButton
-            className={this.state.error ? "is-disabled" : ""}
-            onClick={() => this.handleOperator("-")}
-            text="-"
-          />
-          <CalculatorButton
-            className="is-number"
-            text="1"
-            onClick={() => this.handleNumberClick("1")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="2"
-            onClick={() => this.handleNumberClick("2")}
-          />
-          <CalculatorButton
-            className="is-number"
-            text="3"
-            onClick={() => this.handleNumberClick("3")}
-          />
-          <CalculatorButton
-            className={this.state.error ? "is-disabled" : ""}
-            onClick={() => this.handleOperator("+")}
-            text="+"
-          />
-          <CalculatorButton
-            className="is-number"
-            onClick={() => this.handleNegative()}
-            text="+/-"
-          />
-          <CalculatorButton
-            className="is-number"
-            text="0"
-            onClick={() => this.handleNumberClick("0")}
-          />
-          <CalculatorButton
-            className="is-number"
-            onClick={() => this.handleNumberClick(".")}
-            text="."
-          />
-          <CalculatorButton
-            className="is-equal"
-            onClick={() => this.handleEqual()}
-            text="="
-          />
-        </div>
+  return (
+    <div className="calculator">
+      <div className="calculator-header">
+        Simple calculator by HaPK using ReactJS
       </div>
-    );
-  }
+      <div className="calculator-operator">{operator}</div>
+      <CalculatorScreen value={realValue} />
+      <div className="calculator-board">
+        <CalculatorButton text="CE" onClick={clearEntry} />
+        <CalculatorButton text="C" onClick={clearAll} />
+        <CalculatorButton text="Back" onClick={handleBackClick} />
+        <CalculatorButton
+          className={error ? "is-disabled" : ""}
+          onClick={() => handleOperator("/")}
+          text="/"
+        />
+        <CalculatorButton
+          className="is-number"
+          text="7"
+          onClick={() => handleNumberClick("7")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="8"
+          onClick={() => handleNumberClick("8")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="9"
+          onClick={() => handleNumberClick("9")}
+        />
+        <CalculatorButton
+          className={error ? "is-disabled" : ""}
+          onClick={() => handleOperator("x")}
+          text="x"
+        />
+        <CalculatorButton
+          className="is-number"
+          text="4"
+          onClick={() => handleNumberClick("4")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="5"
+          onClick={() => handleNumberClick("5")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="6"
+          onClick={() => handleNumberClick("6")}
+        />
+        <CalculatorButton
+          className={error ? "is-disabled" : ""}
+          onClick={() => handleOperator("-")}
+          text="-"
+        />
+        <CalculatorButton
+          className="is-number"
+          text="1"
+          onClick={() => handleNumberClick("1")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="2"
+          onClick={() => handleNumberClick("2")}
+        />
+        <CalculatorButton
+          className="is-number"
+          text="3"
+          onClick={() => handleNumberClick("3")}
+        />
+        <CalculatorButton
+          className={error ? "is-disabled" : ""}
+          onClick={() => handleOperator("+")}
+          text="+"
+        />
+        <CalculatorButton
+          className="is-number"
+          onClick={() => handleNegative()}
+          text="+/-"
+        />
+        <CalculatorButton
+          className="is-number"
+          text="0"
+          onClick={() => handleNumberClick("0")}
+        />
+        <CalculatorButton
+          className="is-number"
+          onClick={() => handleNumberClick(".")}
+          text="."
+        />
+        <CalculatorButton
+          className="is-equal"
+          onClick={() => handleEqual()}
+          text="="
+        />
+      </div>
+    </div>
+  );
 }
 
 function formatNumber(input) {
